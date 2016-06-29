@@ -7,19 +7,19 @@ package tdd.vendingMachine.display;
  */
 public class Display {
 
-    private String currentMessage;
+    private String message;
 
     private Display() {}
 
     public Display(String helloMessage) {
-        this.currentMessage = helloMessage;
+        this.message = helloMessage;
     }
 
-    public void setCurrentMessage(String currentMessage) {
-        this.currentMessage = currentMessage;
+    public void setMessage(String message) {
+        this.message = message;
     }
 
-    public String getCurrentMessage() {
-        return currentMessage;
+    public String getMessage() {
+        return message;
     }
 }

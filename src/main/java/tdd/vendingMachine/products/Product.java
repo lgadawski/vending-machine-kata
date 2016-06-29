@@ -5,7 +5,15 @@ import java.math.BigDecimal;
 /**
  * @author Łukasz Gadawski
  */
-public interface Product {
+public abstract class Product {
 
-    BigDecimal getPrice();
+    private final BigDecimal price;
+
+    public Product(BigDecimal price) {
+        this.price = price;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
 }

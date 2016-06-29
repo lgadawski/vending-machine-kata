@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import tdd.vendingMachine.display.DisplayMessages;
+import tdd.vendingMachine.exceptions.MaximumCoinCapacityExceedException;
 
 /**
  * Collection of basic tests of vending machine.
@@ -16,7 +17,7 @@ public class VendingMachineTest {
     private VendingMachineConfig vendingMachineConfig;
 
     @Before
-    public void init() {
+    public void init() throws MaximumCoinCapacityExceedException {
         vendingMachineConfig =
             new VendingMachineConfig.Builder()
                 .setMaxCoinNumberOfEachTypeInVendingMachine(100)
@@ -30,7 +31,7 @@ public class VendingMachineTest {
 
     @Test
     public void testSelectingEmptyShelve() {
-        vendingMachine.removeAllProductsFromShelves();
+        vendingMachine.clearProductsFromShelves();
         vendingMachine.selectShelveNumber(vendingMachineConfig.getNumberOfShelves() - 1);
 
         Assertions.assertThat(vendingMachine.getSelectedShelveNumber()).isEqualTo(-1);
@@ -45,9 +46,14 @@ public class VendingMachineTest {
         Assertions.assertThat(vendingMachine.getDisplayMessage())
             .isEqualTo(DisplayMessages.SELECTED_SHELVE_NO_OUT_OF_POSSIBLE_SHELVE_NUMBERS);
     }
+
     @Test
     public void testSelectingNonEmptyShelve() {
-        // TODO
+        vendingMachine.putRandomProductsOnShelves();
+        vendingMachine.selectShelveNumber(vendingMachineConfig.getNumberOfShelves() - 1);
+
+        Assertions.assertThat(vendingMachine.getSelectedShelveNumber())
+            .isEqualTo(vendingMachineConfig.getNumberOfShelves() - 1);
     }
 
 }
