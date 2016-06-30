@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import tdd.vendingMachine.products.Product;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -73,7 +74,7 @@ enum Transaction {
     }
 
     protected Map<CoinDenomination, Integer> getCoins() {
-        return coins;
+        return Collections.unmodifiableMap(coins);
     }
 
     public Product getProduct() {

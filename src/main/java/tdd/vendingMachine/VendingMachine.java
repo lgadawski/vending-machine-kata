@@ -88,6 +88,7 @@ public final class VendingMachine {
     }
 
     protected void putRandomProductOnShelve(int shelveNo) {
+        // TODO correct to randomizing product on shelves
         shelves.replace(shelveNo, Lists.newArrayList(new Liquid(LiquidType.COKE, BigDecimal.valueOf(2.5), 0.33)));
     }
 
@@ -220,7 +221,7 @@ public final class VendingMachine {
     }
 
     public Map<CoinDenomination, Integer> getCoins() {
-        return coins;
+        return Collections.unmodifiableMap(coins);
     }
 
     public int getNumberOfProductsOnShelve(int shelveNo) {
