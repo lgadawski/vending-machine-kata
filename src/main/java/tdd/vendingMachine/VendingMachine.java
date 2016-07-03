@@ -1,14 +1,17 @@
 package tdd.vendingMachine;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import tdd.vendingMachine.changeAlgorithm.CoinReturningAlgorithm;
+import tdd.vendingMachine.changeAlgorithm.NotEnoughCoinsToReturnException;
 import tdd.vendingMachine.display.Display;
 import tdd.vendingMachine.display.DisplayMessages;
 import tdd.vendingMachine.exceptions.MaximumCoinCapacityExceedException;
+import tdd.vendingMachine.products.Product;
 import tdd.vendingMachine.products.liquid.Liquid;
 import tdd.vendingMachine.products.liquid.LiquidType;
-import tdd.vendingMachine.products.Product;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -21,13 +24,22 @@ import java.util.Map;
  *
  * @author Łukasz Gadawski
  */
-public final class VendingMachine {
+public class VendingMachine {
 
     private final VendingMachineConfig config;
 
+    private final Transaction tx;
+
     private final Map<Integer, List<Product>> shelves;
 
+    /** Contains product returned after transaction */
+    private Product returnedProduct;
+
+    /** Map of coins inserted into machine. Maps is sorted that higher value denomination are first. */
     private final Map<CoinDenomination, Integer> coins;
+
+    /** Contains coins returned after transaction */
+    private Map<CoinDenomination, Integer> returnedChange;
 
     private final Display display;
 
@@ -42,12 +54,17 @@ public final class VendingMachine {
             this.shelves.put(i, Lists.newArrayListWithCapacity(config.getMaxProductsOnShelve()));
         }
 
-        this.coins = Maps.newHashMap();
+        // coins will be sorted in descending order by coin denomination value
+        this.coins = Maps.newTreeMap(CoinDenomination.valueDescendingComparator);
         for (CoinDenomination cd : CoinDenomination.values()) {
             this.coins.put(cd, 0);
         }
 
+        this.returnedChange = Maps.newHashMap();
+
         this.display = new Display(DisplayMessages.HELLO_MESSAGE);
+
+        this.tx = new Transaction();
 
         this.config = config;
     }
@@ -87,9 +104,9 @@ public final class VendingMachine {
             });
     }
 
-    protected void putRandomProductOnShelve(int shelveNo) {
+    protected void putRandomProductOnShelve(int shelveNo, BigDecimal price) {
         // TODO correct to randomizing product on shelves
-        shelves.replace(shelveNo, Lists.newArrayList(new Liquid(LiquidType.COKE, BigDecimal.valueOf(2.5), 0.33)));
+        shelves.replace(shelveNo, Lists.newArrayList(new Liquid(LiquidType.COKE, price, 0.33)));
     }
 
     public Product selectShelveNumber(int selectedShelveNumber) {
@@ -134,42 +151,56 @@ public final class VendingMachine {
      * Inserting coin opening transaction. It assumes that before inserting coin user has selected shelves to get
      * product from, otherwise there is no possibility to insert coin into vending machine.
      *
-     * @param cd inserted coind denomination
-     * @return opened transaction, or current transaction if it is already open
+     * @param cd inserted coin denomination
      */
-    public Transaction insertCoin(CoinDenomination cd) {
+    public void insertCoin(CoinDenomination cd) {
         Preconditions.checkState(getSelectedShelveNumber() != -1);
 
-        Transaction t = Transaction.INSTANCE;
-        if (!t.isOpen()) {
-            t.open();
+        if (!tx.isOpen()) {
+            tx.open();
             Product product = getProductFromSelectedShelve();
             if (product == null) {
-                t.close();
+                tx.close();
                 display.setMessage(DisplayMessages.NO_PRODUCTS_ON_SHELVE);
-                return t;
             }
-            t.setProduct(product);
+            tx.setProduct(product);
         }
 
         try {
             putCoinIntoMachine(cd, 1);
         } catch (MaximumCoinCapacityExceedException e) {
-            beforeTransactionClose(t);
-            t.close();
-
-            return t;
+            beforeTransactionCancelClose(tx);
+            tx.close();
         }
 
-        t.insertCoin(cd);
-        display.setMessage(String.valueOf(t.getLeftAmountToBuy()));
-
-        return t;
+        if (tx.insertCoin(cd)) {
+            returnChange(tx.getLeftAmountToBuy());
+            returnProduct(tx);
+            tx.close();
+        }
+        display.setMessage(String.valueOf(tx.getLeftAmountToBuy()));
     }
 
-    private void beforeTransactionClose(Transaction t) {
+    private void returnChange(BigDecimal leftAmountToBuy) {
+        Map<CoinDenomination, Integer> change = null;
+        try {
+            change = new CoinReturningAlgorithm(coins()).getChange(leftAmountToBuy.negate());
+        } catch (NotEnoughCoinsToReturnException e) {
+            // TODO handle exception
+            e.printStackTrace();
+        }
+        removeCoinsFromMachine(change);
+        returnedChange = change;
+    }
+
+    private void beforeTransactionCancelClose(Transaction t) {
         returnProductOnShelve(t.getProduct());
-        returnInsertedCoins(t.getCoins());
+        removeCoinsFromMachine(t.coins());
+        returnedChange = t.coins();
+    }
+
+    private void returnProduct(Transaction t) {
+        this.returnedProduct = t.getProduct();
     }
 
     /**
@@ -184,18 +215,19 @@ public final class VendingMachine {
 
         Map<CoinDenomination, Integer> insertedCoins = Collections.emptyMap();
 
-        Transaction t = Transaction.INSTANCE;
-        if (t.isOpen()) {
-            insertedCoins = Maps.newHashMap(t.getCoins());
-            beforeTransactionClose(t);
-            t.close();
+        if (tx.isOpen()) {
+            insertedCoins = Maps.newHashMap(tx.coins());
+            beforeTransactionCancelClose(tx);
+            tx.close();
             display.setMessage(DisplayMessages.HELLO_MESSAGE);
         }
 
         return insertedCoins;
     }
 
-    private void returnInsertedCoins(Map<CoinDenomination, Integer> insertedCoins) {
+    private void removeCoinsFromMachine(Map<CoinDenomination, Integer> insertedCoins) {
+        Preconditions.checkNotNull(insertedCoins);
+
         coins.entrySet().stream()
             .forEach(entry -> {
                 Integer insertedNumber = insertedCoins.get(entry.getKey());
@@ -220,11 +252,27 @@ public final class VendingMachine {
         return  products.remove(0);
     }
 
-    public Map<CoinDenomination, Integer> getCoins() {
-        return Collections.unmodifiableMap(coins);
+    public Map<CoinDenomination, Integer> coins() {
+        return ImmutableMap.copyOf(coins);
     }
 
     public int getNumberOfProductsOnShelve(int shelveNo) {
         return shelves.get(shelveNo).size();
+    }
+
+    public Product getReturnedProduct() {
+        return returnedProduct;
+    }
+
+    public Map<CoinDenomination, Integer> getReturnedChange() {
+        return returnedChange;
+    }
+
+    public BigDecimal getReturnedChangeValue() {
+        return CoinDenomination.ValueCounter.count(getReturnedChange());
+    }
+
+    protected Transaction transaction() {
+        return tx;
     }
 }

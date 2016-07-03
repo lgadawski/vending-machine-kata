@@ -12,8 +12,7 @@ import java.util.Map;
  *
  * @author Łukasz Gadawski
  */
-enum Transaction {
-    INSTANCE;
+class Transaction {
 
     private boolean isOpen;
 
@@ -53,7 +52,10 @@ enum Transaction {
         this.leftAmountToBuy = product.getPrice();
     }
 
-    void insertCoin(CoinDenomination cd) {
+    /**
+     * @return true if inserted amount of coins is enough to buy product in transaction, false otherwise
+     */
+    boolean insertCoin(CoinDenomination cd) {
         Integer currentCoinNumber = coins.get(cd);
         if (currentCoinNumber == null) {
             coins.put(cd, 1);
@@ -63,21 +65,29 @@ enum Transaction {
 
         insertedAmount = insertedAmount.add(cd.getValue());
         leftAmountToBuy = leftAmountToBuy.subtract(cd.getValue());
+
+        return leftAmountToBuy.compareTo(BigDecimal.ZERO) <= 0;
+
     }
 
     BigDecimal getInsertedAmount() {
         return insertedAmount;
     }
 
+    /**
+     * @return left amount to buy. If enough money has been inserted method should return value <= 0.
+     * 0 means that exact amount of money has been put.
+     */
     BigDecimal getLeftAmountToBuy() {
         return leftAmountToBuy;
     }
 
-    protected Map<CoinDenomination, Integer> getCoins() {
+    protected Map<CoinDenomination, Integer> coins() {
         return Collections.unmodifiableMap(coins);
     }
 
     public Product getProduct() {
         return product;
     }
+
 }
