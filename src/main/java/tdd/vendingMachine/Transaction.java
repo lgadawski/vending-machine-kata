@@ -1,10 +1,10 @@
 package tdd.vendingMachine;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import tdd.vendingMachine.products.Product;
 
 import java.math.BigDecimal;
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -83,7 +83,7 @@ class Transaction {
     }
 
     protected Map<CoinDenomination, Integer> coins() {
-        return Collections.unmodifiableMap(coins);
+        return ImmutableMap.copyOf(coins);
     }
 
     public Product getProduct() {
