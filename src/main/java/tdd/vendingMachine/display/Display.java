@@ -9,10 +9,8 @@ public class Display {
 
     private String message;
 
-    private Display() {}
-
-    public Display(String helloMessage) {
-        this.message = helloMessage;
+    public Display() {
+        // empty
     }
 
     public void setMessage(String message) {

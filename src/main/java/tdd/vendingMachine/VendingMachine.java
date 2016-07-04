@@ -13,10 +13,7 @@ import tdd.vendingMachine.exceptions.MaximumCoinCapacityExceedException;
 import tdd.vendingMachine.products.Product;
 
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 
 /**
@@ -45,9 +42,13 @@ public class VendingMachine {
 
     private int selectedShelveNumber = -1;
 
+    private ResourceBundle bundle;
+
 
     public VendingMachine(VendingMachineConfig config) {
         Preconditions.checkNotNull(config);
+
+        this.config = config;
 
         this.shelves = Maps.newHashMapWithExpectedSize(config.getNumberOfShelves());
         for (int i = 0; i < config.getNumberOfShelves(); ++i) {
@@ -62,11 +63,12 @@ public class VendingMachine {
 
         this.returnedChange = Maps.newHashMap();
 
-        this.display = new Display(DisplayMessages.HELLO_MESSAGE);
-
         this.tx = new Transaction();
 
-        this.config = config;
+        this.bundle = ResourceBundle.getBundle(config.getBundle());
+
+        this.display = new Display();
+        setDisplayMessage(DisplayMessages.HELLO_MESSAGE);
     }
 
     /**
@@ -83,7 +85,7 @@ public class VendingMachine {
     private void putCoinIntoMachine(CoinDenomination cd, Integer cdCurrentCount, int coinNumber)
         throws MaximumCoinCapacityExceedException {
         if (cdCurrentCount + coinNumber > config.getMaxCoinNumberOfEachTypeInVendingMachine()) {
-            display.setMessage(DisplayMessages.MAX_MACHINE_COIN_CAPACITY_REACHED);
+            setDisplayMessage(DisplayMessages.MAX_MACHINE_COIN_CAPACITY_REACHED);
             throw new MaximumCoinCapacityExceedException();
         }
 
@@ -112,18 +114,18 @@ public class VendingMachine {
     public Product selectShelveNumber(int selectedShelveNumber) {
         List<Product> productFromShelve = shelves.get(selectedShelveNumber);
         if (productFromShelve == null) {
-            display.setMessage(DisplayMessages.SELECTED_SHELVE_NO_OUT_OF_POSSIBLE_SHELVE_NUMBERS);
+            setDisplayMessage(DisplayMessages.SELECTED_SHELVE_NO_OUT_OF_POSSIBLE_SHELVE_NUMBERS);
             setSelectedShelveNumber(-1);
             return null;
         }
         if (productFromShelve.isEmpty()) {
-            display.setMessage(DisplayMessages.NO_PRODUCTS_ON_SHELVE);
+            setDisplayMessage(DisplayMessages.NO_PRODUCTS_ON_SHELVE);
             setSelectedShelveNumber(-1);
             return null;
         }
 
         Product product = productFromShelve.get(0);
-        display.setMessage(String.valueOf(product.getPrice()));
+        setDisplayMessageExact(String.valueOf(product.getPrice()));
         setSelectedShelveNumber(selectedShelveNumber);
 
         return product;
@@ -161,7 +163,8 @@ public class VendingMachine {
             Product product = getProductFromSelectedShelve();
             if (product == null) {
                 tx.close();
-                display.setMessage(DisplayMessages.NO_PRODUCTS_ON_SHELVE);
+                setDisplayMessage(DisplayMessages.NO_PRODUCTS_ON_SHELVE);
+
                 return;
             }
             tx.setProduct(product);
@@ -172,6 +175,7 @@ public class VendingMachine {
         } catch (MaximumCoinCapacityExceedException e) {
             beforeTransactionCancelClose(tx);
             tx.close();
+
             return;
         }
 
@@ -182,15 +186,17 @@ public class VendingMachine {
                 putProductOnShelve(tx.getProduct());
                 setReturnedChange(tx.coins());
                 tx.close();
-                display.setMessage(DisplayMessages.NO_COINS_TO_RETURN);
+                setDisplayMessage(DisplayMessages.NO_COINS_TO_RETURN);
+
                 return;
             }
             returnProduct(tx);
             tx.close();
-            display.setMessage(DisplayMessages.HELLO_MESSAGE);
+            setDisplayMessage(DisplayMessages.HELLO_MESSAGE);
+
             return;
         }
-        display.setMessage(String.valueOf(tx.getLeftAmountToBuy()));
+        setDisplayMessageExact(String.valueOf(tx.getLeftAmountToBuy()));
     }
 
     private void returnChange(BigDecimal leftAmountToBuy) {
@@ -226,7 +232,7 @@ public class VendingMachine {
             insertedCoins = Maps.newHashMap(tx.coins());
             beforeTransactionCancelClose(tx);
             tx.close();
-            display.setMessage(DisplayMessages.HELLO_MESSAGE);
+            setDisplayMessage(DisplayMessages.HELLO_MESSAGE);
         }
 
         return insertedCoins;
@@ -289,5 +295,19 @@ public class VendingMachine {
 
     protected Transaction transaction() {
         return tx;
+    }
+
+    /**
+     * Set display message from bundle by passed property key.
+     */
+    private void setDisplayMessage(String displayMessageKey) {
+        display.setMessage(bundle.getString(displayMessageKey));
+    }
+
+    /**
+     * Set display message exactly as passed arg.
+     */
+    private void setDisplayMessageExact(String s) {
+        display.setMessage(s);
     }
 }

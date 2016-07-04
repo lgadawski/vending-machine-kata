@@ -10,10 +10,7 @@ import tdd.vendingMachine.products.liquid.Liquid;
 import tdd.vendingMachine.products.liquid.LiquidType;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
@@ -30,6 +27,7 @@ public class VendingMachineTransactionTest {
     private VendingMachine vendingMachine;
     private int testedShelve;
     private Product possibleProduct;
+    private ResourceBundle bundle;
 
     @Before
     public void init() {
@@ -37,6 +35,7 @@ public class VendingMachineTransactionTest {
             .setMaxCoinNumberOfEachTypeInVendingMachine(100)
             .setNumberOfShelves(5)
             .setMaxProductsOnShelve(4)
+            .setBundle("i18n.messages")
             .build();
         vendingMachine = new VendingMachine(vendingMachineConfig);
 
@@ -51,6 +50,8 @@ public class VendingMachineTransactionTest {
             .capacity(0.25)
             .build();
         vendingMachine.putRandomProductsOnShelves(Collections.singletonList(possibleProduct));
+
+        bundle = ResourceBundle.getBundle(vendingMachineConfig.getBundle());
     }
 
     @After
@@ -174,7 +175,7 @@ public class VendingMachineTransactionTest {
             .isEqualTo(insertedCoin.getValue());
         assertThat(vendingMachine.getReturnedChange().size()).isEqualTo(1);
         assertThat(vendingMachine.getReturnedProduct()).isNull();
-        assertThat(vendingMachine.getDisplayMessage()).isEqualTo(DisplayMessages.NO_COINS_TO_RETURN);
+        assertThat(vendingMachine.getDisplayMessage()).isEqualTo(bundle.getString(DisplayMessages.NO_COINS_TO_RETURN));
     }
 
     @Test
@@ -195,7 +196,7 @@ public class VendingMachineTransactionTest {
         assertThat(vendingMachine.getReturnedProduct()).isNotNull();
         assertThat(vendingMachine.getReturnedProduct()).isEqualTo(product);
         assertThat(vendingMachine.getReturnedChange().isEmpty()).isEqualTo(true);
-        assertThat(vendingMachine.getDisplayMessage()).isEqualTo(DisplayMessages.HELLO_MESSAGE);
+        assertThat(vendingMachine.getDisplayMessage()).isEqualTo(bundle.getString(DisplayMessages.HELLO_MESSAGE));
     }
 
     @Test

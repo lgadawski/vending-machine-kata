@@ -36,6 +36,7 @@ public class VendingMachineInitiatingTest {
                 .setMaxCoinNumberOfEachTypeInVendingMachine(100)
                 .setNumberOfShelves(5)
                 .setMaxProductsOnShelve(4)
+                .setBundle("i18n.messages")
                 .build();
         vendingMachine = new VendingMachine(vendingMachineConfig);
 

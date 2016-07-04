@@ -9,6 +9,7 @@ import tdd.vendingMachine.products.liquid.LiquidType;
 
 import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.ResourceBundle;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -22,6 +23,7 @@ public class VendingMachineTest {
 
     private VendingMachine vendingMachine;
     private VendingMachineConfig vendingMachineConfig;
+    private ResourceBundle bundle;
 
     @Before
     public void init() {
@@ -30,6 +32,7 @@ public class VendingMachineTest {
                 .setMaxCoinNumberOfEachTypeInVendingMachine(100)
                 .setNumberOfShelves(5)
                 .setMaxProductsOnShelve(4)
+                .setBundle("i18n.messages")
                 .build();
         vendingMachine = new VendingMachine(vendingMachineConfig);
 
@@ -41,6 +44,8 @@ public class VendingMachineTest {
             .capacity(0.25)
             .build();
         vendingMachine.putRandomProductsOnShelves(Collections.singletonList(p1));
+
+        bundle = ResourceBundle.getBundle(vendingMachineConfig.getBundle());
     }
 
     @Test
@@ -49,7 +54,8 @@ public class VendingMachineTest {
         vendingMachine.selectShelveNumber(vendingMachineConfig.getNumberOfShelves() - 1);
 
         assertThat(vendingMachine.getSelectedShelveNumber()).isEqualTo(-1);
-        assertThat(vendingMachine.getDisplayMessage()).isEqualTo(DisplayMessages.NO_PRODUCTS_ON_SHELVE);
+        assertThat(vendingMachine.getDisplayMessage())
+            .isEqualTo(bundle.getString(DisplayMessages.NO_PRODUCTS_ON_SHELVE));
         assertTrue(vendingMachine.getReturnedChange().isEmpty());
         assertThat(vendingMachine.getReturnedProduct()).isNull();
     }
@@ -60,7 +66,7 @@ public class VendingMachineTest {
 
         assertThat(vendingMachine.getSelectedShelveNumber()).isEqualTo(-1);
         assertThat(vendingMachine.getDisplayMessage())
-            .isEqualTo(DisplayMessages.SELECTED_SHELVE_NO_OUT_OF_POSSIBLE_SHELVE_NUMBERS);
+            .isEqualTo(bundle.getString(DisplayMessages.SELECTED_SHELVE_NO_OUT_OF_POSSIBLE_SHELVE_NUMBERS));
         assertTrue(vendingMachine.getReturnedChange().isEmpty());
         assertThat(vendingMachine.getReturnedProduct()).isNull();
     }
