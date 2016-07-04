@@ -27,7 +27,14 @@ public class CoinReturningAlgorithm {
         this.availableCoins.putAll(availableCoins);
     }
 
-    public Map<CoinDenomination, Integer> getChange(final BigDecimal overFlow) {
+    /**
+     * For given overflow amount gives change base on provided map of coins.
+     *
+     * @param overFlow - amount to return in coins
+     * @return - map of coins needed to return change based on provided initially coins
+     * @throws NotEnoughCoinsToReturnException - when there is not enough coins to return properly change
+     */
+    public Map<CoinDenomination, Integer> getChange(final BigDecimal overFlow) throws NotEnoughCoinsToReturnException {
         Preconditions.checkNotNull(overFlow);
 
         int zeroToOverflow = BigDecimal.ZERO.compareTo(overFlow);

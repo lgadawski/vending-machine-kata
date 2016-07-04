@@ -4,7 +4,7 @@ import com.google.common.collect.Maps;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import tdd.vendingMachine.exceptions.MaximumCoinCapacityExceedException;
+import tdd.vendingMachine.display.DisplayMessages;
 import tdd.vendingMachine.products.Product;
 
 import java.math.BigDecimal;
@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -22,13 +23,15 @@ import static org.junit.Assert.assertTrue;
  */
 public class VendingMachineTransactionTest {
 
+    private VendingMachineConfig vendingMachineConfig;
+
     private VendingMachine vendingMachine;
 
     private int testedShelve;
 
     @Before
-    public void init() throws MaximumCoinCapacityExceedException {
-        VendingMachineConfig vendingMachineConfig = new VendingMachineConfig.Builder()
+    public void init() {
+        vendingMachineConfig = new VendingMachineConfig.Builder()
             .setMaxCoinNumberOfEachTypeInVendingMachine(100)
             .setNumberOfShelves(5)
             .setMaxProductsOnShelve(4)
@@ -150,6 +153,25 @@ public class VendingMachineTransactionTest {
     }
 
     @Test
+    public void testBuyingProductNotEnoughCoinsInMachine() {
+        vendingMachine = new VendingMachine(vendingMachineConfig);
+        vendingMachine.feedWithCoinsEachType(0);
+        vendingMachine.putRandomProductOnShelve(testedShelve, BigDecimal.valueOf(2.5));
+
+        vendingMachine.selectShelveNumber(testedShelve);
+
+        CoinDenomination insertedCoin = CoinDenomination.FIVE;
+        vendingMachine.insertCoin(insertedCoin);
+
+        assertFalse(vendingMachine.transaction().isOpen());
+        assertThat(CoinDenomination.ValueCounter.count(vendingMachine.getReturnedChange()))
+            .isEqualTo(insertedCoin.getValue());
+        assertThat(vendingMachine.getReturnedChange().size()).isEqualTo(1);
+        assertThat(vendingMachine.getReturnedProduct()).isNull();
+        assertThat(vendingMachine.getDisplayMessage()).isEqualTo(DisplayMessages.NO_COINS_TO_RETURN);
+    }
+
+    @Test
     public void testBuyingProductNoChange() {
         Product product = vendingMachine.selectShelveNumber(testedShelve);
         assertThat(product).isNotNull();
@@ -160,10 +182,14 @@ public class VendingMachineTransactionTest {
         for (CoinDenomination cd : Arrays.asList(CoinDenomination.TWO, CoinDenomination.HALF)) {
             vendingMachine.insertCoin(cd);
             insertedVal = insertedVal.add(cd.getValue());
+            assertTrue(vendingMachine.transaction().getLeftAmountToBuy().compareTo(
+                product.getPrice().subtract(insertedVal)) == 0);
         }
 
+        assertThat(vendingMachine.getReturnedProduct()).isNotNull();
         assertThat(vendingMachine.getReturnedProduct()).isEqualTo(product);
         assertThat(vendingMachine.getReturnedChange().isEmpty()).isEqualTo(true);
+        assertThat(vendingMachine.getDisplayMessage()).isEqualTo(DisplayMessages.HELLO_MESSAGE);
     }
 
     @Test
@@ -181,7 +207,7 @@ public class VendingMachineTransactionTest {
         }
 
         assertThat(vendingMachine.getReturnedProduct()).isEqualTo(product);
-
+        assertThat(vendingMachine.getReturnedProduct()).isNotNull();
         assertThat(vendingMachine.getReturnedChange().isEmpty()).isEqualTo(false);
         assertTrue(vendingMachine.getReturnedChangeValue().compareTo(insertedVal.subtract(product.getPrice())) == 0);
     }

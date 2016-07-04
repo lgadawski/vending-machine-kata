@@ -5,4 +5,4 @@ package tdd.vendingMachine.exceptions;
  *
  * @author Łukasz Gadawski
  */
-public class MaximumCoinCapacityExceedException extends Throwable {}
+public class MaximumCoinCapacityExceedException extends RuntimeException {}

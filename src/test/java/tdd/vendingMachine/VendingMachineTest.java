@@ -3,9 +3,9 @@ package tdd.vendingMachine;
 import org.junit.Before;
 import org.junit.Test;
 import tdd.vendingMachine.display.DisplayMessages;
-import tdd.vendingMachine.exceptions.MaximumCoinCapacityExceedException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Collection of basic tests of vending machine.
@@ -18,7 +18,7 @@ public class VendingMachineTest {
     private VendingMachineConfig vendingMachineConfig;
 
     @Before
-    public void init() throws MaximumCoinCapacityExceedException {
+    public void init() {
         vendingMachineConfig =
             new VendingMachineConfig.Builder()
                 .setMaxCoinNumberOfEachTypeInVendingMachine(100)
@@ -37,6 +37,8 @@ public class VendingMachineTest {
 
         assertThat(vendingMachine.getSelectedShelveNumber()).isEqualTo(-1);
         assertThat(vendingMachine.getDisplayMessage()).isEqualTo(DisplayMessages.NO_PRODUCTS_ON_SHELVE);
+        assertTrue(vendingMachine.getReturnedChange().isEmpty());
+        assertThat(vendingMachine.getReturnedProduct()).isNull();
     }
 
     @Test
@@ -46,6 +48,8 @@ public class VendingMachineTest {
         assertThat(vendingMachine.getSelectedShelveNumber()).isEqualTo(-1);
         assertThat(vendingMachine.getDisplayMessage())
             .isEqualTo(DisplayMessages.SELECTED_SHELVE_NO_OUT_OF_POSSIBLE_SHELVE_NUMBERS);
+        assertTrue(vendingMachine.getReturnedChange().isEmpty());
+        assertThat(vendingMachine.getReturnedProduct()).isNull();
     }
 
     @Test
@@ -54,6 +58,8 @@ public class VendingMachineTest {
         vendingMachine.selectShelveNumber(vendingMachineConfig.getNumberOfShelves() - 1);
 
         assertThat(vendingMachine.getSelectedShelveNumber()).isEqualTo(vendingMachineConfig.getNumberOfShelves() - 1);
+        assertTrue(vendingMachine.getReturnedChange().isEmpty());
+        assertThat(vendingMachine.getReturnedProduct()).isNull();
     }
 
 }

@@ -16,4 +16,6 @@ public interface DisplayMessages {
 
     String MAX_MACHINE_COIN_CAPACITY_REACHED =
         "Inserted coins reach maximum capacity for vending machine. Transaction will be canceled.";
+
+    String NO_COINS_TO_RETURN = "There is not enough coins in machine to return change.";
 }

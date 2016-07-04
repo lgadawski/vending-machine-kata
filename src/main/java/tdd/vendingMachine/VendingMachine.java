@@ -51,7 +51,7 @@ public class VendingMachine {
 
         this.shelves = Maps.newHashMapWithExpectedSize(config.getNumberOfShelves());
         for (int i = 0; i < config.getNumberOfShelves(); ++i) {
-            this.shelves.put(i, Lists.newArrayListWithCapacity(config.getMaxProductsOnShelve()));
+            this.shelves.put(i, Lists.newLinkedList());
         }
 
         // coins will be sorted in descending order by coin denomination value
@@ -74,7 +74,7 @@ public class VendingMachine {
      *
      * @param coinNumber number of coins of each type inserted into vending machine.
      */
-    public void feedWithCoinsEachType(int coinNumber) throws MaximumCoinCapacityExceedException {
+    public void feedWithCoinsEachType(int coinNumber) {
         for (Map.Entry<CoinDenomination, Integer> entry : coins.entrySet()) {
             putCoinIntoMachine(entry.getKey(), entry.getValue(), coinNumber);
         }
@@ -90,7 +90,7 @@ public class VendingMachine {
         coins.replace(cd, cdCurrentCount + coinNumber);
     }
 
-    private void putCoinIntoMachine(CoinDenomination cd, int coinNumber) throws MaximumCoinCapacityExceedException {
+    private void putCoinIntoMachine(CoinDenomination cd, int coinNumber) {
         putCoinIntoMachine(cd, coins.get(cd), coinNumber);
     }
 
@@ -107,6 +107,10 @@ public class VendingMachine {
     protected void putRandomProductOnShelve(int shelveNo, BigDecimal price) {
         // TODO correct to randomizing product on shelves
         shelves.replace(shelveNo, Lists.newArrayList(new Liquid(LiquidType.COKE, price, 0.33)));
+    }
+
+    private void putProductOnShelve(Product product) {
+        shelves.get(getSelectedShelveNumber()).add(product);
     }
 
     public Product selectShelveNumber(int selectedShelveNumber) {
@@ -162,6 +166,7 @@ public class VendingMachine {
             if (product == null) {
                 tx.close();
                 display.setMessage(DisplayMessages.NO_PRODUCTS_ON_SHELVE);
+                return;
             }
             tx.setProduct(product);
         }
@@ -171,32 +176,38 @@ public class VendingMachine {
         } catch (MaximumCoinCapacityExceedException e) {
             beforeTransactionCancelClose(tx);
             tx.close();
+            return;
         }
 
         if (tx.insertCoin(cd)) {
-            returnChange(tx.getLeftAmountToBuy());
+            try {
+                returnChange(tx.getLeftAmountToBuy());
+            } catch (NotEnoughCoinsToReturnException e) {
+                putProductOnShelve(tx.getProduct());
+                setReturnedChange(tx.coins());
+                tx.close();
+                display.setMessage(DisplayMessages.NO_COINS_TO_RETURN);
+                return;
+            }
             returnProduct(tx);
             tx.close();
+            display.setMessage(DisplayMessages.HELLO_MESSAGE);
+            return;
         }
         display.setMessage(String.valueOf(tx.getLeftAmountToBuy()));
     }
 
     private void returnChange(BigDecimal leftAmountToBuy) {
-        Map<CoinDenomination, Integer> change = null;
-        try {
-            change = new CoinReturningAlgorithm(coins()).getChange(leftAmountToBuy.negate());
-        } catch (NotEnoughCoinsToReturnException e) {
-            // TODO handle exception
-            e.printStackTrace();
-        }
+        CoinReturningAlgorithm algorithm = new CoinReturningAlgorithm(coins());
+        Map<CoinDenomination, Integer> change = algorithm.getChange(leftAmountToBuy.negate());
         removeCoinsFromMachine(change);
-        returnedChange = change;
+        setReturnedChange(change);
     }
 
     private void beforeTransactionCancelClose(Transaction t) {
         returnProductOnShelve(t.getProduct());
         removeCoinsFromMachine(t.coins());
-        returnedChange = t.coins();
+        setReturnedChange(t.coins());
     }
 
     private void returnProduct(Transaction t) {
@@ -249,7 +260,7 @@ public class VendingMachine {
             return null;
         }
 
-        return  products.remove(0);
+        return products.remove(0);
     }
 
     public Map<CoinDenomination, Integer> coins() {
@@ -266,6 +277,10 @@ public class VendingMachine {
 
     public Map<CoinDenomination, Integer> getReturnedChange() {
         return returnedChange;
+    }
+
+    private void setReturnedChange(Map<CoinDenomination,Integer> returnedChange) {
+        this.returnedChange = Maps.newHashMap(returnedChange);
     }
 
     public BigDecimal getReturnedChangeValue() {

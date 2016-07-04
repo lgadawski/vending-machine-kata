@@ -5,7 +5,6 @@ import com.google.common.collect.Maps;
 import org.junit.Before;
 import org.junit.Test;
 import tdd.vendingMachine.CoinDenomination;
-import tdd.vendingMachine.exceptions.MaximumCoinCapacityExceedException;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -22,7 +21,7 @@ public class CoinReturningAlgorithmTest {
     private CoinReturningAlgorithm algorithm;
 
     @Before
-    public void init() throws MaximumCoinCapacityExceedException {
+    public void init() {
         Map<CoinDenomination, Integer> availableCoins = Maps.newHashMap();
         for (CoinDenomination cd : CoinDenomination.values()) {
             availableCoins.put(cd, 5);
