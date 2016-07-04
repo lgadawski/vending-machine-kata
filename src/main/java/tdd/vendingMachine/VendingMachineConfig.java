@@ -11,7 +11,7 @@ public class VendingMachineConfig {
     private final int maxProductsOnShelve;
     private final int numberOfShelves;
 
-    public VendingMachineConfig(Builder builder) {
+    private VendingMachineConfig(Builder builder) {
         this.maxCoinNumberOfEachTypeInVendingMachine = builder.maxCoinNumberOfEachTypeInVendingMachine;
         this.maxProductsOnShelve = builder.maxProductsOnShelve;
         this.numberOfShelves = builder.numberOfShelves;

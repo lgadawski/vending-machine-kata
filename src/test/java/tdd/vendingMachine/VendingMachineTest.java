@@ -3,6 +3,12 @@ package tdd.vendingMachine;
 import org.junit.Before;
 import org.junit.Test;
 import tdd.vendingMachine.display.DisplayMessages;
+import tdd.vendingMachine.products.Product;
+import tdd.vendingMachine.products.liquid.Liquid;
+import tdd.vendingMachine.products.liquid.LiquidType;
+
+import java.math.BigDecimal;
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -28,6 +34,13 @@ public class VendingMachineTest {
         vendingMachine = new VendingMachine(vendingMachineConfig);
 
         vendingMachine.feedWithCoinsEachType(10);
+
+        Product p1 = new Liquid.Builder()
+            .type(LiquidType.COKE)
+            .price(BigDecimal.valueOf(2.5))
+            .capacity(0.25)
+            .build();
+        vendingMachine.putRandomProductsOnShelves(Collections.singletonList(p1));
     }
 
     @Test
@@ -54,7 +67,6 @@ public class VendingMachineTest {
 
     @Test
     public void testSelectingNonEmptyShelve() {
-        vendingMachine.putRandomProductsOnShelves();
         vendingMachine.selectShelveNumber(vendingMachineConfig.getNumberOfShelves() - 1);
 
         assertThat(vendingMachine.getSelectedShelveNumber()).isEqualTo(vendingMachineConfig.getNumberOfShelves() - 1);

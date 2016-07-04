@@ -6,9 +6,12 @@ import org.junit.Before;
 import org.junit.Test;
 import tdd.vendingMachine.display.DisplayMessages;
 import tdd.vendingMachine.products.Product;
+import tdd.vendingMachine.products.liquid.Liquid;
+import tdd.vendingMachine.products.liquid.LiquidType;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -24,10 +27,9 @@ import static org.junit.Assert.assertTrue;
 public class VendingMachineTransactionTest {
 
     private VendingMachineConfig vendingMachineConfig;
-
     private VendingMachine vendingMachine;
-
     private int testedShelve;
+    private Product possibleProduct;
 
     @Before
     public void init() {
@@ -43,8 +45,12 @@ public class VendingMachineTransactionTest {
         testedShelve = vendingMachineConfig.getNumberOfShelves() - 1;
         vendingMachine.clearProductsFromShelves();
 
-        BigDecimal price = BigDecimal.valueOf(2.5);
-        vendingMachine.putRandomProductOnShelve(testedShelve, price);
+        possibleProduct = new Liquid.Builder()
+            .type(LiquidType.COKE)
+            .price(BigDecimal.valueOf(2.5))
+            .capacity(0.25)
+            .build();
+        vendingMachine.putRandomProductsOnShelves(Collections.singletonList(possibleProduct));
     }
 
     @After
@@ -156,7 +162,7 @@ public class VendingMachineTransactionTest {
     public void testBuyingProductNotEnoughCoinsInMachine() {
         vendingMachine = new VendingMachine(vendingMachineConfig);
         vendingMachine.feedWithCoinsEachType(0);
-        vendingMachine.putRandomProductOnShelve(testedShelve, BigDecimal.valueOf(2.5));
+        vendingMachine.putRandomProductsOnShelves(Collections.singletonList(possibleProduct));
 
         vendingMachine.selectShelveNumber(testedShelve);
 

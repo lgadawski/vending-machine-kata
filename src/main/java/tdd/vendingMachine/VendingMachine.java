@@ -4,19 +4,19 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.apache.commons.lang3.SerializationUtils;
 import tdd.vendingMachine.changeAlgorithm.CoinReturningAlgorithm;
 import tdd.vendingMachine.changeAlgorithm.NotEnoughCoinsToReturnException;
 import tdd.vendingMachine.display.Display;
 import tdd.vendingMachine.display.DisplayMessages;
 import tdd.vendingMachine.exceptions.MaximumCoinCapacityExceedException;
 import tdd.vendingMachine.products.Product;
-import tdd.vendingMachine.products.liquid.Liquid;
-import tdd.vendingMachine.products.liquid.LiquidType;
 
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 
 /**
@@ -94,19 +94,15 @@ public class VendingMachine {
         putCoinIntoMachine(cd, coins.get(cd), coinNumber);
     }
 
-    protected void putRandomProductsOnShelves() {
-        // TODO correct to randomizing product on shelves
+    protected void putRandomProductsOnShelves(List<Product> possibleProductList) {
+        Random random = new Random();
         shelves.entrySet().stream()
             .forEach(entry -> {
+                Product product = possibleProductList.get(random.nextInt(possibleProductList.size()));
                 for (int i = 0; i < config.getMaxProductsOnShelve(); i++) {
-                    entry.getValue().add(new Liquid(LiquidType.COKE, BigDecimal.valueOf(2.5), 0.33));
+                    entry.getValue().add(SerializationUtils.clone(product));
                 }
             });
-    }
-
-    protected void putRandomProductOnShelve(int shelveNo, BigDecimal price) {
-        // TODO correct to randomizing product on shelves
-        shelves.replace(shelveNo, Lists.newArrayList(new Liquid(LiquidType.COKE, price, 0.33)));
     }
 
     private void putProductOnShelve(Product product) {
@@ -265,6 +261,10 @@ public class VendingMachine {
 
     public Map<CoinDenomination, Integer> coins() {
         return ImmutableMap.copyOf(coins);
+    }
+
+    public Map<Integer, List<Product>> shelves() {
+        return ImmutableMap.copyOf(shelves);
     }
 
     public int getNumberOfProductsOnShelve(int shelveNo) {
