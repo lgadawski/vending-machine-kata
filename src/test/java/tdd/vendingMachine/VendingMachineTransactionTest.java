@@ -116,7 +116,6 @@ public class VendingMachineTransactionTest {
         assertThat(vendingMachine.getSelectedShelveNumber()).isEqualTo(-1);
         assertThat(vendingMachine.getReturnedChange().size()).isEqualTo(inserted.size());
         assertThat(vendingMachine.getReturnedChange()).isEqualTo(inserted);
-        assertThat(vendingMachine.getReturnedChangeValue()).isEqualTo(CoinDenomination.ValueCounter.count(inserted));
     }
 
     @Test
@@ -281,7 +280,6 @@ public class VendingMachineTransactionTest {
         assertThat(vendingMachine.getReturnedProduct()).isEqualTo(product);
         assertThat(vendingMachine.getReturnedProduct()).isNotNull();
         assertThat(vendingMachine.getReturnedChange().isEmpty()).isEqualTo(false);
-        assertTrue(vendingMachine.getReturnedChangeValue().compareTo(insertedVal.subtract(product.getPrice())) == 0);
         assertThat(vendingMachine.getSelectedShelveNumber()).isEqualTo(-1);
     }
 

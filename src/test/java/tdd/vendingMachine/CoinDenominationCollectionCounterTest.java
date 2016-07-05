@@ -1,8 +1,7 @@
-package tdd.vendingMachine.changeAlgorithm;
+package tdd.vendingMachine;
 
 import com.google.common.collect.Maps;
 import org.junit.Test;
-import tdd.vendingMachine.CoinDenomination;
 
 import java.math.BigDecimal;
 import java.util.Map;

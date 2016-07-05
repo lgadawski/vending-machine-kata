@@ -1,8 +1,8 @@
-package tdd.vendingMachine.changeAlgorithm;
+package tdd.vendingMachine;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
-import tdd.vendingMachine.CoinDenomination;
+import tdd.vendingMachine.exceptions.NotEnoughCoinsToReturnException;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -16,7 +16,7 @@ import java.util.Map;
  *
  * @author Łukasz Gadawski
  */
-public class CoinReturningAlgorithm {
+class CoinReturningAlgorithm {
 
     private final Map<CoinDenomination, Integer> availableCoins;
 

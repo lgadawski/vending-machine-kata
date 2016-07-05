@@ -1,4 +1,4 @@
-package tdd.vendingMachine.changeAlgorithm;
+package tdd.vendingMachine.exceptions;
 
 /**
  * Exception indicating that there wasn't provided enough coins to return.

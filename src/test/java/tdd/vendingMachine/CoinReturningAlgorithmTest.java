@@ -1,10 +1,10 @@
-package tdd.vendingMachine.changeAlgorithm;
+package tdd.vendingMachine;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import org.junit.Before;
 import org.junit.Test;
-import tdd.vendingMachine.CoinDenomination;
+import tdd.vendingMachine.exceptions.NotEnoughCoinsToReturnException;
 
 import java.math.BigDecimal;
 import java.util.Collections;

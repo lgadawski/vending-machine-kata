@@ -5,11 +5,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.SerializationUtils;
-import tdd.vendingMachine.changeAlgorithm.CoinReturningAlgorithm;
-import tdd.vendingMachine.changeAlgorithm.NotEnoughCoinsToReturnException;
 import tdd.vendingMachine.display.Display;
 import tdd.vendingMachine.display.DisplayMessages;
 import tdd.vendingMachine.exceptions.MaximumCoinCapacityExceedException;
+import tdd.vendingMachine.exceptions.NotEnoughCoinsToReturnException;
 import tdd.vendingMachine.products.Product;
 
 import java.math.BigDecimal;
@@ -102,6 +101,15 @@ public class VendingMachine {
 
     private void putCoinIntoMachine(CoinDenomination cd, int coinNumber) {
         putCoinIntoMachine(cd, coins.get(cd), coinNumber);
+    }
+
+    public void feedWithProducts(Map<Integer, Product> products) {
+        shelves.entrySet().stream()
+            .forEach(entry -> {
+                for (int i = 0; i < config.getMaxProductsOnShelve(); i++) {
+                    entry.getValue().add(SerializationUtils.clone(products.get(entry.getKey())));
+                }
+            });
     }
 
     protected void putRandomProductsOnShelves(List<Product> possibleProductList) {
@@ -264,7 +272,7 @@ public class VendingMachine {
         return products.remove(0);
     }
 
-    public Map<CoinDenomination, Integer> coins() {
+    protected Map<CoinDenomination, Integer> coins() {
         return ImmutableMap.copyOf(coins);
     }
 
@@ -272,7 +280,7 @@ public class VendingMachine {
         return ImmutableMap.copyOf(shelves);
     }
 
-    public int getNumberOfProductsOnShelve(int shelveNo) {
+    protected int getNumberOfProductsOnShelve(int shelveNo) {
         return shelves.get(shelveNo).size();
     }
 
@@ -289,10 +297,6 @@ public class VendingMachine {
             CoinDenomination cd = entry.getKey();
             this.returnedChange.put(cd, this.returnedChange.getOrDefault(cd, 0) + entry.getValue());
         }
-    }
-
-    public BigDecimal getReturnedChangeValue() {
-        return CoinDenomination.ValueCounter.count(getReturnedChange());
     }
 
     protected Transaction transaction() {
