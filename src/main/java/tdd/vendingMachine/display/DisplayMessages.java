@@ -1,7 +1,7 @@
 package tdd.vendingMachine.display;
 
 /**
- * Holds possible vending machine display messages.
+ * Holds possible vending machine display messages keys.
  *
  * @author Łukasz Gadawski
  */

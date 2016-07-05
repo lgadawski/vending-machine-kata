@@ -175,14 +175,7 @@ public class VendingMachine {
 
         if (!tx.isOpen()) {
             tx.open();
-            Product product = getProductFromSelectedShelve();
-            if (product == null) {
-                tx.close();
-                setDisplayMessage(DisplayMessages.NO_PRODUCTS_ON_SHELVE);
-
-                return;
-            }
-            tx.setProduct(product);
+            tx.setProduct(getProductFromSelectedShelve());
         }
 
         try {
@@ -238,20 +231,13 @@ public class VendingMachine {
      * Canceling current transaction if there is any open. If so it cancel transaction, removes inserted coins
      * from vending machine and return map that represents inserted coins. Canceling transaction is possible
      * if there was selected shelve to get product from.
-     *
-     * @return map contains inserted coins during last transaction. Empty map if there wasn't open transaction.
      */
-    public Map<CoinDenomination, Integer> cancel() {
-        Map<CoinDenomination, Integer> insertedCoins = Collections.emptyMap();
-
+    public void cancel() {
         if (tx.isOpen()) {
-            insertedCoins = Maps.newHashMap(tx.coins());
             beforeTransactionCancelClose(tx);
             tx.close();
             setDisplayMessage(DisplayMessages.HELLO_MESSAGE);
         }
-
-        return insertedCoins;
     }
 
     private void removeCoinsFromMachine(Map<CoinDenomination, Integer> insertedCoins) {
@@ -274,9 +260,6 @@ public class VendingMachine {
 
     private Product getProductFromSelectedShelve() {
         List<Product> products = shelves.get(getSelectedShelveNumber());
-        if (products.isEmpty()) {
-            return null;
-        }
 
         return products.remove(0);
     }

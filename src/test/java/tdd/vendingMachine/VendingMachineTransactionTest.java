@@ -61,17 +61,41 @@ public class VendingMachineTransactionTest {
     }
 
     @Test
+    public void testNoProductsOnShelve() {
+        vendingMachine.clearProductsFromShelves();
+        Product product = vendingMachine.selectShelveNumber(vendingMachineConfig.getNumberOfShelves() - 1);
+
+        vendingMachine.insertCoin(CoinDenomination.ONE_TENTH);
+
+        assertThat(product).isNull();
+        assertThat(vendingMachine.getDisplayMessage())
+            .isEqualTo(bundle.getString(DisplayMessages.NO_PRODUCTS_ON_SHELVE));
+        assertFalse(vendingMachine.transaction().isOpen());
+    }
+
+    @Test
     public void testMaximumCoinsLimitExceeded() {
+        vendingMachine.clearProductsFromShelves();
+        possibleProduct = new Liquid.Builder()
+            .type(LiquidType.COKE)
+            .price(BigDecimal.valueOf(99999))
+            .capacity(0.25)
+            .build();
+        vendingMachine.putRandomProductsOnShelves(Collections.singletonList(possibleProduct));
+        Product product = vendingMachine.selectShelveNumber(vendingMachineConfig.getNumberOfShelves() - 1);
+        assertThat(product).isNotNull();
+
         int noCoinsToInsert = vendingMachineConfig.getMaxCoinNumberOfEachTypeInVendingMachine() + 1;
-        CoinDenomination cd = CoinDenomination.FIVE;
-        for (int i = 0; i < noCoinsToInsert; i++) {
+        CoinDenomination cd = CoinDenomination.ONE_TENTH;
+        for (int i = 0; i <= noCoinsToInsert; i++) {
             vendingMachine.insertCoin(cd);
         }
 
         assertFalse(vendingMachine.transaction().isOpen());
         assertThat(vendingMachine.getReturnedChange().get(cd)).isEqualTo(noCoinsToInsert);
         assertThat(vendingMachine.getReturnedProduct()).isNull();
-        assertThat(vendingMachine.getDisplayMessage()).isEqualTo(bundle.getString(DisplayMessages.HELLO_MESSAGE));
+        assertThat(vendingMachine.getDisplayMessage())
+            .isEqualTo(bundle.getString(DisplayMessages.MAX_MACHINE_COIN_CAPACITY_REACHED));
     }
 
     @Test
@@ -155,6 +179,7 @@ public class VendingMachineTransactionTest {
         assertThat(vendingMachine.getNumberOfProductsOnShelve(testedShelve)).isEqualTo(numberOfProductsOnShelve);
         assertThat(vendingMachine.getReturnedProduct()).isNull();
         assertThat(vendingMachine.getSelectedShelveNumber()).isEqualTo(-1);
+        assertThat(vendingMachine.getReturnedChange().get(CoinDenomination.ONE)).isEqualTo(1);
     }
 
     @Test
