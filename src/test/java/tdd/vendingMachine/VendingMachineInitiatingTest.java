@@ -1,5 +1,6 @@
 package tdd.vendingMachine;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import tdd.vendingMachine.products.Product;
@@ -58,6 +59,11 @@ public class VendingMachineInitiatingTest {
 
         possibleProductTypeList = Arrays.asList(p1, p2, p3);
         vendingMachine.putRandomProductsOnShelves(possibleProductTypeList);
+    }
+
+    @After
+    public void reset() {
+        vendingMachine.reset();
     }
 
     @Test

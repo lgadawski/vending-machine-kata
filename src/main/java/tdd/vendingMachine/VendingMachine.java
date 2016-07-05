@@ -71,6 +71,15 @@ public class VendingMachine {
         setDisplayMessage(DisplayMessages.HELLO_MESSAGE);
     }
 
+    protected void reset() {
+        setDisplayMessage(DisplayMessages.HELLO_MESSAGE);
+        this.shelves.clear();
+        this.coins.clear();
+        this.returnedChange.clear();
+        this.returnedProduct = null;
+        this.tx.close();
+    }
+
     /**
      * Feeds vending machine with coinNumber of each denomination.
      *
@@ -82,14 +91,13 @@ public class VendingMachine {
         }
     }
 
-    private void putCoinIntoMachine(CoinDenomination cd, Integer cdCurrentCount, int coinNumber)
-        throws MaximumCoinCapacityExceedException {
+    private void putCoinIntoMachine(CoinDenomination cd, Integer cdCurrentCount, int coinNumber) {
         if (cdCurrentCount + coinNumber > config.getMaxCoinNumberOfEachTypeInVendingMachine()) {
             setDisplayMessage(DisplayMessages.MAX_MACHINE_COIN_CAPACITY_REACHED);
             throw new MaximumCoinCapacityExceedException();
         }
 
-        coins.replace(cd, cdCurrentCount + coinNumber);
+        coins.put(cd, cdCurrentCount + coinNumber);
     }
 
     private void putCoinIntoMachine(CoinDenomination cd, int coinNumber) {
@@ -131,6 +139,10 @@ public class VendingMachine {
         return product;
     }
 
+    private void resetSelectedShelve() {
+        this.selectedShelveNumber = -1;
+    }
+
     public String getDisplayMessage() {
         return display.getMessage();
     }
@@ -150,13 +162,16 @@ public class VendingMachine {
     }
 
     /**
-     * Inserting coin opening transaction. It assumes that before inserting coin user has selected shelves to get
-     * product from, otherwise there is no possibility to insert coin into vending machine.
+     * Inserting coin opening transaction. If before inserting coin there wasn't selected any shelve coin will
+     * be put into returnChange collection.
      *
      * @param cd inserted coin denomination
      */
     public void insertCoin(CoinDenomination cd) {
-        Preconditions.checkState(getSelectedShelveNumber() != -1);
+        if (getSelectedShelveNumber() == -1) {
+            putReturnedChange(Collections.singletonMap(cd, 1));
+            return;
+        }
 
         if (!tx.isOpen()) {
             tx.open();
@@ -184,13 +199,15 @@ public class VendingMachine {
                 returnChange(tx.getLeftAmountToBuy());
             } catch (NotEnoughCoinsToReturnException e) {
                 putProductOnShelve(tx.getProduct());
-                setReturnedChange(tx.coins());
+                putReturnedChange(tx.coins());
+                resetSelectedShelve();
                 tx.close();
                 setDisplayMessage(DisplayMessages.NO_COINS_TO_RETURN);
 
                 return;
             }
             returnProduct(tx);
+            resetSelectedShelve();
             tx.close();
             setDisplayMessage(DisplayMessages.HELLO_MESSAGE);
 
@@ -203,13 +220,14 @@ public class VendingMachine {
         CoinReturningAlgorithm algorithm = new CoinReturningAlgorithm(coins());
         Map<CoinDenomination, Integer> change = algorithm.getChange(leftAmountToBuy.negate());
         removeCoinsFromMachine(change);
-        setReturnedChange(change);
+        putReturnedChange(change);
     }
 
     private void beforeTransactionCancelClose(Transaction t) {
         returnProductOnShelve(t.getProduct());
         removeCoinsFromMachine(t.coins());
-        setReturnedChange(t.coins());
+        putReturnedChange(t.coins());
+        resetSelectedShelve();
     }
 
     private void returnProduct(Transaction t) {
@@ -224,8 +242,6 @@ public class VendingMachine {
      * @return map contains inserted coins during last transaction. Empty map if there wasn't open transaction.
      */
     public Map<CoinDenomination, Integer> cancel() {
-        Preconditions.checkState(getSelectedShelveNumber() != -1);
-
         Map<CoinDenomination, Integer> insertedCoins = Collections.emptyMap();
 
         if (tx.isOpen()) {
@@ -285,8 +301,11 @@ public class VendingMachine {
         return returnedChange;
     }
 
-    private void setReturnedChange(Map<CoinDenomination,Integer> returnedChange) {
-        this.returnedChange = Maps.newHashMap(returnedChange);
+    private void putReturnedChange(Map<CoinDenomination, Integer> returnedChange) {
+        for (Map.Entry<CoinDenomination, Integer> entry : returnedChange.entrySet()) {
+            CoinDenomination cd = entry.getKey();
+            this.returnedChange.put(cd, this.returnedChange.getOrDefault(cd, 0) + entry.getValue());
+        }
     }
 
     public BigDecimal getReturnedChangeValue() {

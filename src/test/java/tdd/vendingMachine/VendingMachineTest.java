@@ -1,5 +1,6 @@
 package tdd.vendingMachine;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import tdd.vendingMachine.display.DisplayMessages;
@@ -46,6 +47,11 @@ public class VendingMachineTest {
         vendingMachine.putRandomProductsOnShelves(Collections.singletonList(p1));
 
         bundle = ResourceBundle.getBundle(vendingMachineConfig.getBundle());
+    }
+
+    @After
+    public void reset() {
+        vendingMachine.reset();
     }
 
     @Test

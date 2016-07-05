@@ -56,12 +56,7 @@ public class CoinReturningAlgorithm {
             BigDecimal entryCoinDenominationValue = entry.getKey().getValue();
             while (entry.getValue() > 0) {
                 if (entryCoinDenominationValue.compareTo(leftToReturn) <= 0) {
-                    Integer resultCoinNumber = result.get(entry.getKey());
-                    if (resultCoinNumber == null) {
-                        result.put(entry.getKey(), 1);
-                    } else {
-                        result.replace(entry.getKey(), resultCoinNumber+1);
-                    }
+                    result.put(entry.getKey(), result.getOrDefault(entry.getKey(), 0) + 1);
                     leftToReturn = leftToReturn.subtract(entryCoinDenominationValue);
 
                     // if last coin

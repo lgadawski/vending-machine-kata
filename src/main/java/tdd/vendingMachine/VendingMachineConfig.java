@@ -1,5 +1,8 @@
 package tdd.vendingMachine;
 
+import com.google.common.base.Preconditions;
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * Vending machine configuration.
  *
@@ -13,6 +16,8 @@ public class VendingMachineConfig {
     private final String bundle;
 
     private VendingMachineConfig(Builder builder) {
+        Preconditions.checkArgument(!StringUtils.isBlank(builder.bundle));
+
         this.maxCoinNumberOfEachTypeInVendingMachine = builder.maxCoinNumberOfEachTypeInVendingMachine;
         this.maxProductsOnShelve = builder.maxProductsOnShelve;
         this.numberOfShelves = builder.numberOfShelves;

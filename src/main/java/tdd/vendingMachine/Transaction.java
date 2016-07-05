@@ -56,12 +56,7 @@ class Transaction {
      * @return true if inserted amount of coins is enough to buy product in transaction, false otherwise
      */
     boolean insertCoin(CoinDenomination cd) {
-        Integer currentCoinNumber = coins.get(cd);
-        if (currentCoinNumber == null) {
-            coins.put(cd, 1);
-        } else {
-            coins.replace(cd, ++currentCoinNumber);
-        }
+        coins.put(cd, coins.getOrDefault(cd, 0) + 1);
 
         insertedAmount = insertedAmount.add(cd.getValue());
         leftAmountToBuy = leftAmountToBuy.subtract(cd.getValue());

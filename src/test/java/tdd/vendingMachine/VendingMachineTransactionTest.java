@@ -1,5 +1,6 @@
 package tdd.vendingMachine;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import org.junit.After;
 import org.junit.Before;
@@ -56,7 +57,42 @@ public class VendingMachineTransactionTest {
 
     @After
     public void after() {
-        vendingMachine.cancel();
+        vendingMachine.reset();
+    }
+
+    @Test
+    public void testMaximumCoinsLimitExceeded() {
+        int noCoinsToInsert = vendingMachineConfig.getMaxCoinNumberOfEachTypeInVendingMachine() + 1;
+        CoinDenomination cd = CoinDenomination.FIVE;
+        for (int i = 0; i < noCoinsToInsert; i++) {
+            vendingMachine.insertCoin(cd);
+        }
+
+        assertFalse(vendingMachine.transaction().isOpen());
+        assertThat(vendingMachine.getReturnedChange().get(cd)).isEqualTo(noCoinsToInsert);
+        assertThat(vendingMachine.getReturnedProduct()).isNull();
+        assertThat(vendingMachine.getDisplayMessage()).isEqualTo(bundle.getString(DisplayMessages.HELLO_MESSAGE));
+    }
+
+    @Test
+    public void testInsertingCoinsWhenAnyShelveSelected() {
+        Map<CoinDenomination, Integer> inserted = ImmutableMap.<CoinDenomination, Integer>builder()
+            .put(CoinDenomination.HALF, 1)
+            .put(CoinDenomination.FIVE, 2)
+            .build();
+
+        for (Map.Entry<CoinDenomination, Integer> entry : inserted.entrySet()) {
+            for (int i = 0; i < entry.getValue(); i++) {
+                vendingMachine.insertCoin(entry.getKey());
+            }
+        }
+
+        assertThat(vendingMachine.getReturnedProduct()).isNull();
+        assertFalse(vendingMachine.transaction().isOpen());
+        assertThat(vendingMachine.getSelectedShelveNumber()).isEqualTo(-1);
+        assertThat(vendingMachine.getReturnedChange().size()).isEqualTo(inserted.size());
+        assertThat(vendingMachine.getReturnedChange()).isEqualTo(inserted);
+        assertThat(vendingMachine.getReturnedChangeValue()).isEqualTo(CoinDenomination.ValueCounter.count(inserted));
     }
 
     @Test
@@ -118,6 +154,7 @@ public class VendingMachineTransactionTest {
         assertTrue(BigDecimal.ZERO.compareTo(t.getLeftAmountToBuy()) == 0);
         assertThat(vendingMachine.getNumberOfProductsOnShelve(testedShelve)).isEqualTo(numberOfProductsOnShelve);
         assertThat(vendingMachine.getReturnedProduct()).isNull();
+        assertThat(vendingMachine.getSelectedShelveNumber()).isEqualTo(-1);
     }
 
     @Test
@@ -157,6 +194,7 @@ public class VendingMachineTransactionTest {
         assertTrue(BigDecimal.ZERO.compareTo(tx.getLeftAmountToBuy()) == 0);
         assertThat(vendingMachine.getNumberOfProductsOnShelve(testedShelve)).isEqualTo(numberOfProductsOnShelve);
         assertThat(vendingMachine.getReturnedProduct()).isNull();
+        assertThat(vendingMachine.getSelectedShelveNumber()).isEqualTo(-1);
     }
 
     @Test
@@ -176,6 +214,7 @@ public class VendingMachineTransactionTest {
         assertThat(vendingMachine.getReturnedChange().size()).isEqualTo(1);
         assertThat(vendingMachine.getReturnedProduct()).isNull();
         assertThat(vendingMachine.getDisplayMessage()).isEqualTo(bundle.getString(DisplayMessages.NO_COINS_TO_RETURN));
+        assertThat(vendingMachine.getSelectedShelveNumber()).isEqualTo(-1);
     }
 
     @Test
@@ -197,6 +236,7 @@ public class VendingMachineTransactionTest {
         assertThat(vendingMachine.getReturnedProduct()).isEqualTo(product);
         assertThat(vendingMachine.getReturnedChange().isEmpty()).isEqualTo(true);
         assertThat(vendingMachine.getDisplayMessage()).isEqualTo(bundle.getString(DisplayMessages.HELLO_MESSAGE));
+        assertThat(vendingMachine.getSelectedShelveNumber()).isEqualTo(-1);
     }
 
     @Test
@@ -217,6 +257,44 @@ public class VendingMachineTransactionTest {
         assertThat(vendingMachine.getReturnedProduct()).isNotNull();
         assertThat(vendingMachine.getReturnedChange().isEmpty()).isEqualTo(false);
         assertTrue(vendingMachine.getReturnedChangeValue().compareTo(insertedVal.subtract(product.getPrice())) == 0);
+        assertThat(vendingMachine.getSelectedShelveNumber()).isEqualTo(-1);
+    }
+
+    @Test
+    public void testBuyingProductMultipleCoinChange() {
+        Product product = vendingMachine.selectShelveNumber(testedShelve);
+        BigDecimal productPrice = BigDecimal.valueOf(2.5);
+
+        assertTrue(product.getPrice().compareTo(productPrice) == 0);
+
+        Map<CoinDenomination, Integer> coins =
+            ImmutableMap.<CoinDenomination, Integer>builder()
+                .put(CoinDenomination.ONE_TENTH, 3)
+                .put(CoinDenomination.ONE_FIFTH, 8)
+                .put(CoinDenomination.FIVE, 1)
+                .build();
+
+        BigDecimal insertedVal = BigDecimal.ZERO;
+        for (Map.Entry<CoinDenomination, Integer> entry : coins.entrySet()) {
+            for (int i = 0; i < entry.getValue(); i++) {
+                vendingMachine.insertCoin(entry.getKey());
+                insertedVal = insertedVal.add(entry.getKey().getValue());
+                if (vendingMachine.transaction().isOpen()) {
+                    assertThat(vendingMachine.getDisplayMessage())
+                        .isEqualTo(String.valueOf(productPrice.subtract(insertedVal)));
+                } else {
+                    assertThat(vendingMachine.getDisplayMessage())
+                        .isEqualTo(bundle.getString(DisplayMessages.HELLO_MESSAGE));
+                }
+            }
+        }
+
+        assertThat(vendingMachine.getReturnedProduct()).isNotNull();
+        assertThat(vendingMachine.getDisplayMessage()).isEqualTo(bundle.getString(DisplayMessages.HELLO_MESSAGE));
+        assertFalse(vendingMachine.transaction().isOpen());
+        assertFalse(vendingMachine.getReturnedChange().isEmpty());
+        assertTrue(CoinDenomination.ValueCounter.count(vendingMachine.getReturnedChange())
+            .compareTo(insertedVal.subtract(productPrice)) == 0);
     }
 }
 
